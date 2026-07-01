@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
+import './learning-tree-styles.css';
+import { LearningTree } from './components/learning-tree/LearningTree';
 
 const APP_BASE = window.location.pathname.startsWith('/spurti') ? '/spurti' : '';
 const API = `${APP_BASE}/api`;
@@ -255,9 +257,15 @@ function SearchModal({ onClose, onStudent }) {
 
 function StudentView({ profile, onBack }) {
   const [tab, setTab] = useState('bank');
+  const [showLearningTree, setShowLearningTree] = useState(false);
   const { student } = profile;
   const badges = useMemo(() => buildBadges(profile), [profile]);
   const nextActions = useMemo(() => buildNextActions(profile), [profile]);
+
+  if (showLearningTree) {
+    return <LearningTree onClose={() => setShowLearningTree(false)} />;
+  }
+
   return (
     <main className="page compact">
       <header className="topbar">
@@ -270,6 +278,11 @@ function StudentView({ profile, onBack }) {
       </header>
       <LevelStatus student={student} />
       <StudentPulse profile={profile} badges={badges} nextActions={nextActions} />
+      <div className="tree-launcher">
+        <button className="tree-btn" onClick={() => setShowLearningTree(true)}>
+          🌳 My Learning Tree
+        </button>
+      </div>
       <Tabs tab={tab} setTab={setTab} tabs={[['bank','SP Bank'], ['polls','Polls'], ['leaderboard','Leaderboard']]} />
       {tab === 'bank' && <SpBank transactions={profile.transactions} />}
       {tab === 'polls' && <Polls polls={profile.polls} />}

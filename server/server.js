@@ -593,7 +593,221 @@ function last24Hours(now) {
   return new Date(now.getTime() - 24 * 60 * 60 * 1000);
 }
 
+// --- Learning Tree API ---------------------------------------------------
+import LearningDimension from './models/LearningDimension.js';
+import LearningTree from './models/LearningTree.js';
+import ActivityLog from './models/ActivityLog.js';
+import AIRecommendation from './models/AIRecommendation.js';
+import {
+  DIMENSIONS, DIMENSION_COLORS, DIMENSION_LABELS, ACTIVITY_POINTS,
+  logActivity, getLearningTreeData, getBranchDetail, getFeatherData,
+  getActivityHistory, markRecommendationRead, calculateStreakBonus,
+  updateLearningTree
+} from './services/learningTree.js';
+
+const learningTreeApi = express.Router();
+
+learningTreeApi.get('/', async (req, res) => {
+  const email = await studentEmailFromRequest(req);
+  if (!email) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const data = await getLearningTreeData(email);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+learningTreeApi.get('/branches', async (req, res) => {
+  const email = await studentEmailFromRequest(req);
+  if (!email) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const { dimension } = req.query;
+    if (dimension) {
+      const branch = await getBranchDetail(email, dimension);
+      return res.json(branch);
+    }
+    const dimensions = await LearningDimension.find({ email }).lean();
+    res.json(dimensions.map(d => ({
+      dimension: d.dimension,
+      label: DIMENSION_LABELS[d.dimension],
+      color: DIMENSION_COLORS[d.dimension],
+      xp: d.branchXP,
+      level: d.level,
+      growthPercent: d.growthPercent,
+      streakDays: d.streakDays
+    })));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+learningTreeApi.get('/feathers', async (req, res) => {
+  const email = await studentEmailFromRequest(req);
+  if (!email) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const feathers = await getFeatherData(email);
+    res.json(feathers);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+learningTreeApi.get('/weather', async (req, res) => {
+  const email = await studentEmailFromRequest(req);
+  if (!email) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const tree = await LearningTree.findOne({ email }).lean();
+    res.json(tree?.learningWeather || { type: 'spring', motivation: 'medium', curiosity: 'good', confidence: 'medium', stress: 'low' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+learningTreeApi.get('/advisor', async (req, res) => {
+  const email = await studentEmailFromRequest(req);
+  if (!email) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const recommendations = await AIRecommendation.find({ email, read: false })
+      .sort({ createdAt: -1 }).limit(5).lean();
+    res.json(recommendations);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+learningTreeApi.get('/stage', async (req, res) => {
+  const email = await studentEmailFromRequest(req);
+  if (!email) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const tree = await LearningTree.findOne({ email }).lean();
+    if (!tree) return res.json({ stage: 'beginner', stageProgress: 0, totalBranchXP: 0 });
+    res.json({
+      stage: tree.stage,
+      stageProgress: tree.stageProgress,
+      totalBranchXP: tree.totalBranchXP
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+learningTreeApi.post('/activity', async (req, res) => {
+  const email = await studentEmailFromRequest(req);
+  if (!email) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const { dimension, activityType, duration, qualityScore, metadata } = req.body;
+    if (!dimension || !activityType) {
+      return res.status(400).json({ error: 'dimension and activityType are required' });
+    }
+    if (!DIMENSIONS.includes(dimension)) {
+      return res.status(400).json({ error: 'Invalid dimension' });
+    }
+    const activityConfig = ACTIVITY_POINTS[dimension]?.[activityType];
+    if (!activityConfig) {
+      return res.status(400).json({ error: 'Invalid activity type for dimension' });
+    }
+
+    let basePoints = activityConfig.points;
+    if (activityConfig.perMinute && duration) {
+      basePoints = Math.floor(duration / 10) * activityConfig.points;
+    }
+
+    const result = await logActivity(
+      email,
+      dimension,
+      activityType,
+      basePoints,
+      qualityScore,
+      duration || 0,
+      metadata || {}
+    );
+
+    const tree = await getLearningTreeData(email);
+
+    res.json({
+      success: true,
+      points: basePoints,
+      appliedPoints: result.appliedPoints,
+      newBranchXP: {
+        [dimension]: result.newBranchXP,
+        total: tree.totalBranchXP
+      },
+      branchGrowth: {
+        [dimension]: `${result.newGrowthPercent}%`
+      },
+      stageProgress: {
+        current: tree.stage,
+        next: tree.stage,
+        percent: tree.stageProgress
+      },
+      newRecommendation: tree.recommendations?.[0] || null
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+learningTreeApi.get('/history', async (req, res) => {
+  const email = await studentEmailFromRequest(req);
+  if (!email) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const { dimension, limit } = req.query;
+    const history = await getActivityHistory(email, dimension, Math.min(Number(limit) || 50, 200));
+    res.json(history);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+learningTreeApi.post('/recommendation/:id/read', async (req, res) => {
+  const email = await studentEmailFromRequest(req);
+  if (!email) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    await markRecommendationRead(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Diversity and streak endpoints for integration with existing SP system
+learningTreeApi.post('/sync-from-sp', async (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'email required' });
+
+  const attendance = await AttendanceRecord.find({ email }).lean();
+  const polls = await PollRecord.find({ email }).lean();
+
+  for (const record of attendance) {
+    try {
+      await logActivity(email, 'consistency', 'attendance', 5, 1.0, record.attendedMinutes || 0, {
+        sessionLabel: record.sessionLabel,
+        source: 'spurti_sync'
+      });
+    } catch {}
+  }
+
+  for (const poll of polls) {
+    if (poll.attemptedQuestions > 0) {
+      try {
+        await logActivity(email, 'research', 'paper_read', poll.attemptedQuestions * 2, 1.0, 0, {
+          sessionLabel: poll.sessionLabel,
+          source: 'spurti_sync'
+        });
+      } catch {}
+    }
+  }
+
+  await updateLearningTree(email);
+  res.json({ success: true });
+});
+
 app.use('/api', api);
+app.use('/api/learning-tree', learningTreeApi);
+app.use('/spurti/api', api);
+app.use('/spurti/api/learning-tree', learningTreeApi);
 app.use('/spurti/api', api);
 
 if (fs.existsSync(clientDist)) {
