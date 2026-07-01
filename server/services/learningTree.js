@@ -93,10 +93,11 @@ export function calculateStreakBonus(days) {
 }
 
 export function applyDiminishingUtility(basePoints, activityCount) {
-  if (activityCount === 0) return basePoints;
-  if (activityCount === 1) return basePoints;
-  if (activityCount === 2) return Math.round(basePoints * 0.8);
-  return Math.round(basePoints * 0.4);
+  // activityCount is 1-indexed (1st activity = activityCount 1)
+  if (activityCount <= 1) return basePoints;       // Activity 1: 100%
+  if (activityCount === 2) return Math.round(basePoints * 0.8);  // Activity 2: 80%
+  if (activityCount === 3) return Math.round(basePoints * 0.6);  // Activity 3: 60%
+  return Math.round(basePoints * 0.4);             // Activity 4+: 40%
 }
 
 export async function getTodayXPForDimension(email, dimension) {
@@ -124,7 +125,10 @@ export async function getDailyActivityCount(email, dimension) {
 }
 
 export function validateQuality(duration, qualityScore) {
-  if (duration < 5 && !qualityScore) return false;
+  // Reject if EITHER condition is true:
+  // 1. Duration is less than 5 minutes
+  // 2. Quality score exists and is <= 0.7
+  if (duration < 5) return false;
   if (qualityScore !== undefined && qualityScore <= 0.7) return false;
   return true;
 }
@@ -363,6 +367,39 @@ export async function updateLearningTree(email) {
   });
 
   const weekCategoriesActive = Object.values(weekDimensionCounts).filter(c => c > 0).length;
+
+  // Diversity enforcement: apply penalty if weekly categories < 5
+  // Per docs/implementation.md: "Weekly requirement: balance in at least 5 categories"
+  // Penalty: -10% of weekly XP for each category shortfall
+  if (weekCategoriesActive < 5 && totalBranchXP > 0) {
+    const categoriesShort = 5 - weekCategoriesActive;
+    const weeklyXP = recentActivities.reduce((sum, a) => sum + a.appliedPoints, 0);
+    if (weeklyXP > 0) {
+      const penaltyPerCategory = Math.round(weeklyXP * 0.1);
+      const totalPenalty = penaltyPerCategory * categoriesShort;
+      // Apply penalty proportionally across all dimensions
+      const penaltyPerDim = Math.ceil(totalPenalty / DIMENSIONS.length);
+      for (const dim of DIMENSIONS) {
+        if (dim.branchXP > 0) {
+          await LearningDimension.findOneAndUpdate(
+            { email, dimension: dim },
+            { $inc: { branchXP: -penaltyPerDim } }
+          );
+        }
+      }
+      // Log diversity penalty transaction
+      await ActivityLog.create({
+        email,
+        dimension: 'consistency',
+        activityType: 'diversity_penalty',
+        points: -totalPenalty,
+        appliedPoints: -totalPenalty,
+        qualityScore: 1.0,
+        duration: 0,
+        metadata: { categoriesShort, weekCategoriesActive, reason: 'Weekly diversity requirement not met (need 5 categories, got ' + weekCategoriesActive + ')' }
+      });
+    }
+  }
 
   let stage = 'beginner';
   if (totalBranchXP >= 6000 && activeCategories >= 7) stage = 'mentor';
