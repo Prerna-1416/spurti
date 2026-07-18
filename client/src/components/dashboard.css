@@ -1,0 +1,405 @@
+/* ============================================================
+   COMPACT DASHBOARD LAYOUT (CSS-only)
+   4-row 2-column grid. ~40% height reduction.
+   Text/typography/branding/icons/animations untouched.
+   ============================================================ */
+
+:root {
+  --gap-card: 14px;
+  --gap-section: 16px;
+  --pad-card: 14px 16px;
+  --radius-card: 18px;
+  --shadow-card: 0 8px 22px rgba(15, 23, 42, 0.06);
+  --shadow-card-hover: 0 12px 28px rgba(15, 23, 42, 0.12);
+
+  /* --- Hover-physics easings (the premium feel) --- */
+  --ease-lift: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+   HOVER PHYSICS — universal premium card hover
+   Drop this class on any premium card root for the canonical
+   lift + shadow expansion + border-glow effect.
+   ============================================================ */
+.lift {
+  transition:
+    transform 0.4s var(--ease-lift),
+    box-shadow 0.4s var(--ease-lift),
+    border-color 0.4s var(--ease-lift);
+  will-change: transform;
+}
+.lift:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    var(--shadow-card-hover, 0 12px 28px rgba(15, 23, 42, 0.12)),
+    0 0 0 1px rgba(255, 255, 255, 0.65) inset,
+    0 0 30px rgba(40, 201, 138, 0.12);
+  border-color: rgba(15, 23, 42, 0.04);
+}
+.lift:hover::after,
+.lift.is-glow::after {
+  opacity: 1;
+}
+.lift::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-lift);
+  box-shadow: 0 0 0 1px rgba(40, 201, 138, 0.35) inset, 0 0 24px rgba(40, 201, 138, 0.15) inset;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lift { transition: none; }
+  .lift:hover { transform: none; }
+}
+
+/* --- Page-level compactness --- */
+.page.compact {
+  padding: 14px 0 24px;
+}
+
+/* --- Topbar --- */
+.topbar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+/* --- SP card (hero) — compact --- */
+.sp-card {
+  padding: 14px 16px 12px;
+  min-width: 280px;
+  max-width: 320px;
+  border-radius: var(--radius-card);
+}
+.sp-card__head { margin-bottom: 6px; }
+.sp-card__value-row { gap: 6px; }
+.sp-card__meta { margin-bottom: 10px; }
+.sp-card__progress-block, .sp-card__progress { margin-bottom: 8px; }
+.sp-card__foot { padding-top: 8px; }
+
+/* --- Learning Persona (compact hero) --- */
+.ai-persona-card {
+  padding: 14px 18px 12px;
+  border-radius: var(--radius-card);
+}
+.ai-persona-card__head { margin-bottom: 8px; }
+.ai-persona-card__hero {
+  grid-template-columns: 56px 1fr;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.ai-persona-card__persona-icon { width: 56px; height: 56px; }
+.ai-persona-card__persona-emoji { font-size: 30px; }
+.ai-persona-card__name { font-size: 19px; margin: 0; }
+.ai-persona-card__desc { font-size: 12px; margin: 0; }
+.ai-persona-card__mission { padding: 10px 12px; margin-bottom: 8px; }
+.ai-persona-card__mission-text { margin: 0 0 6px; font-size: 12px; }
+.ai-persona-card__mission-head { margin-bottom: 4px; }
+.ai-persona-card__foot { font-size: 9px; }
+
+/* --- Daily Attendance card (compact) --- */
+.da-card {
+  border-radius: var(--radius-card);
+  min-height: auto;
+}
+.da-card__identity { padding: 14px 12px 12px 16px; gap: 8px; }
+.da-card__avatar-wrap { width: 60px; height: 60px; }
+.da-card__avatar { width: 40px; height: 40px; }
+.da-card__avatar svg { width: 32px; height: 32px; }
+.da-card__avatar-ring-progress { width: 60px; height: 60px; }
+.da-card__avatar-ring-outer { inset: -4px; }
+.da-card__shield-text { font-size: 8px; padding: 3px 10px; }
+.da-card__stats-sp-value { font-size: 22px; }
+.da-card__stats-sp-label { font-size: 10px; }
+.da-card__path { padding: 14px 16px 12px 12px; gap: 6px; }
+.da-card__path-eyebrow { font-size: 10px; gap: 5px; }
+.da-card__path-streak { font-size: 9px; padding: 2px 8px; }
+.da-card__path-track { padding: 12px 0 2px; gap: 8px; }
+.da-card__path-line { top: 32px; }
+.da-card__node-marker { min-height: 40px; }
+.da-card__geode { width: 64px; height: 34px; }
+.da-card__geode-svg { width: 64px; height: 34px; }
+.da-card__node-badge { font-size: 6px; padding: 2px 8px; top: -18px; }
+.da-card__node-radar { width: 20px; height: 20px; }
+.da-card__path-microcopy { min-height: 24px; }
+.da-card__path-copy { font-size: 10px; }
+
+/* --- Poll Participation card (compact) --- */
+.pp-card {
+  padding: 14px 16px 12px;
+  border-radius: var(--radius-card);
+  gap: 8px;
+}
+.pp-card__head { margin-bottom: 8px; }
+.pp-card__hero { grid-template-columns: 48px 1fr; gap: 10px; margin-bottom: 8px; }
+.pp-card__speech { width: 48px; height: 42px; }
+.pp-card__speech-svg { width: 48px; height: 42px; }
+.pp-card__head-sub { font-size: 9px; }
+.pp-card__title { font-size: 14px; margin: 0; line-height: 1.2; }
+.pp-card__lede { font-size: 11px; margin: 0; line-height: 1.4; }
+.pp-card__nodes { padding: 8px 10px; margin-bottom: 8px; }
+.pp-card__nodes-label { margin-bottom: 6px; font-size: 9px; }
+.pp-card__nodes-rail { gap: 0; }
+.pp-node { gap: 2px; }
+.pp-node__mark { width: 18px; height: 18px; }
+.pp-node__dot { width: 3px; height: 3px; }
+.pp-node-line { min-width: 4px; }
+.pp-card__action { gap: 10px; }
+.pp-card__action-sp { font-size: 20px; }
+.pp-card__vote-btn-label { padding: 9px 14px; font-size: 12px; }
+
+/* --- AI Companion Header (compact) --- */
+.ai-companion {
+  padding: 18px 20px 16px;
+  border-radius: var(--radius-card);
+  gap: 16px;
+}
+.ai-companion__hello { font-size: 24px; margin: 0; gap: 8px; }
+.ai-companion__wave { font-size: 24px; }
+.ai-companion__greeting { font-size: 24px; }
+.ai-companion__name { font-size: 24px; }
+.ai-companion__quote { font-size: 13px; }
+.ai-companion__quote-shell { min-height: 20px; }
+.ai-companion__side { gap: 8px; }
+.ai-companion__stat { padding: 6px 12px; }
+.ai-companion__stat-value { font-size: 13px; }
+.ai-companion__stat-label { font-size: 9px; }
+.ai-companion__persona { padding: 6px 12px 6px 8px; gap: 8px; }
+.ai-companion__persona-emoji { width: 26px; height: 26px; font-size: 14px; }
+.ai-companion__persona-text strong { font-size: 11px; }
+.ai-companion__persona-text em { font-size: 8px; }
+
+/* --- Daily Streak card (compact horizontal) --- */
+.ds-card {
+  padding: 14px 16px 12px;
+  border-radius: var(--radius-card);
+}
+.ds-card__head { margin-bottom: 8px; }
+.ds-card__hero { grid-template-columns: 1fr auto; gap: 12px; margin-bottom: 10px; align-items: center; }
+.ds-card__count-block { gap: 2px; }
+.ds-card__count-row { gap: 6px; }
+.ds-card__count-number { font-size: 36px; }
+.ds-card__count-label { font-size: 11px; }
+.ds-card__title { font-size: 14px; margin: 0; }
+.ds-card__lede { font-size: 11px; margin: 0; }
+.ds-card__flame-wrap { width: 64px; height: 64px; }
+.ds-card__flame { font-size: 48px; }
+.ds-card__stats { grid-template-columns: 1fr auto; padding: 8px 10px; margin-bottom: 8px; gap: 8px; }
+.ds-card__stat-eyebrow { font-size: 9px; }
+.ds-card__stat-value { font-size: 18px; }
+.ds-card__stat-unit { font-size: 10px; }
+.ds-card__stat-sub { font-size: 9px; }
+.ds-card__ring { width: 48px; height: 48px; }
+.ds-card__milestones { gap: 6px; margin-bottom: 8px; }
+.ds-card__milestone-row { gap: 4px; }
+.ds-milestone { padding: 6px 4px; }
+.ds-milestone__days { font-size: 12px; }
+.ds-milestone__sp { font-size: 8px; }
+.ds-card__btn { padding: 9px 14px; font-size: 12px; }
+
+/* --- Weekly Streak Tracker — heatmap (compact) --- */
+.ws-heatmap {
+  padding: 14px 16px 12px;
+  border-radius: var(--radius-card);
+  gap: 8px;
+}
+.ws-heatmap__head { margin-bottom: 2px; }
+.ws-heatmap__eyebrow { font-size: 9px; gap: 4px; }
+.ws-heatmap__spark { font-size: 12px; }
+.ws-heatmap__head-count { padding: 2px 8px; }
+.ws-heatmap__head-count-val { font-size: 13px; }
+.ws-heatmap__head-count-target { font-size: 9px; }
+.ws-heatmap__hero {
+  grid-template-columns: 48px 1fr;
+  gap: 10px;
+  padding: 4px 0 2px;
+}
+.ws-heatmap__check-wrap { width: 48px; height: 48px; }
+.ws-heatmap__check-aura { inset: -4px; }
+.ws-heatmap__check-aura--ring { inset: -12px; }
+.ws-heatmap__check-core { width: 36px; height: 36px; }
+.ws-heatmap__check-pulse { inset: -4px; }
+.ws-heatmap__title { font-size: 13px; }
+.ws-heatmap__microcopy-shell { min-height: 1.8em; }
+.ws-heatmap__microcopy { font-size: 11px; }
+.ws-heatmap__row { gap: 4px; }
+.ws-cell { gap: 2px; }
+.ws-cell__block { width: 28px; height: 28px; border-radius: 8px; }
+.ws-cell__check { width: 12px; height: 12px; }
+.ws-cell__halo { inset: -4px; }
+.ws-cell__halo-ring { inset: -5px; }
+.ws-cell__label { font-size: 9px; }
+.ws-cell__tooltip { font-size: 9px; padding: 3px 8px; bottom: 110%; }
+.ws-heatmap__foot { margin-top: 4px; padding-top: 6px; }
+.ws-heatmap__legend { gap: 4px; }
+.ws-heatmap__legend-chip { width: 8px; height: 8px; border-radius: 2px; }
+.ws-heatmap__legend em { font-size: 9px; }
+.ws-heatmap__hint { font-size: 10px; }
+.ws-heatmap__hint--win { font-size: 11px; }
+
+/* --- Recent Activity card (compact timeline) --- */
+.recent-activity-card {
+  padding: 14px 16px;
+  border-radius: var(--radius-card);
+  gap: 8px;
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+}
+.recent-activity-card__head { margin-bottom: 4px; }
+.recent-activity-card__list {
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  flex: 1;
+}
+.recent-activity-card__list li {
+  padding: 6px 8px;
+  gap: 8px;
+}
+.recent-activity-card__emoji {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+}
+.recent-activity-card__body strong { font-size: 12px; }
+.recent-activity-card__body em { font-size: 10px; }
+.recent-activity-card__sp { font-size: 11px; padding: 2px 8px; }
+
+/* --- Persona Suggestions (compact) --- */
+.persona-suggestions {
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  margin-top: 0;
+  gap: 6px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(250, 245, 255, 0.85));
+  border: 1px solid rgba(99, 102, 241, 0.14);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.persona-suggestions__list { gap: 4px; }
+.persona-suggestions__item {
+  padding: 6px 8px;
+  gap: 8px;
+}
+.persona-suggestions__num { width: 18px; height: 18px; font-size: 10px; }
+.persona-suggestions__label { font-size: 12px; line-height: 1.4; }
+
+/* --- Synaptic Sync Card (compact) --- */
+.synaptic-card {
+  padding: 14px 16px 12px;
+  border-radius: var(--radius-card);
+  gap: 8px;
+  min-height: auto;
+}
+.synaptic-card__matrix { width: 96px; height: 72px; top: 6px; right: 6px; }
+.synaptic-card__core { width: 140px; height: 140px; bottom: -15%; left: -12%; }
+.synaptic-card__core-sphere { width: 100px; height: 100px; }
+.synaptic-card__eyebrow { font-size: 9px; gap: 4px; }
+.synaptic-card__copy { font-size: 12px; max-width: 90%; }
+.synaptic-card__meter-label { font-size: 9px; }
+.synaptic-card__meter-pct { font-size: 11px; }
+.synaptic-card__bar-track { height: 5px; }
+.synaptic-card__nodes { gap: 4px; padding: 2px 0; }
+.synaptic-node__ring { width: 24px; height: 24px; }
+.synaptic-node__label { font-size: 7px; }
+.synaptic-card__foot { padding-top: 4px; }
+.synaptic-card__foot-text { font-size: 9px; }
+
+/* --- Progress Moment interstitial --- */
+.progress-moment {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px 0 4px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+.progress-moment__body {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.progress-moment__icon {
+  font-size: 14px;
+  line-height: 1;
+}
+.progress-moment__text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  letter-spacing: -0.005em;
+  line-height: 1.4;
+}
+
+/* --- Premium row spacing (tighter) --- */
+.premium-row { gap: 12px; margin: 12px 0 8px; }
+.premium-row--single { grid-template-columns: minmax(0, 1fr); }
+
+/* --- Streak Milestone (compact) --- */
+.streak-milestone {
+  padding: 12px 16px 10px;
+  border-radius: var(--radius-card);
+  grid-template-columns: 56px 1fr;
+  gap: 4px 12px;
+}
+.streak-milestone__flame { width: 56px; height: 56px; font-size: 40px; }
+.streak-milestone__count { font-size: 22px; }
+.streak-milestone__sub { font-size: 10px; }
+.streak-milestone__stats { padding: 6px 10px; grid-template-columns: 1fr auto; gap: 6px; }
+.streak-milestone__bar { height: 6px; }
+
+/* --- StudentPulse compact --- */
+.pulse-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 8px 0; }
+.pulse-card { padding: 10px 12px; }
+.pulse-card > strong { font-size: 18px; }
+.pulse-card > p { font-size: 10px; margin: 4px 0 0; line-height: 1.4; }
+.pulse-card .compare-list b { font-size: 11px; }
+.pulse-card.wide-pulse { grid-column: span 2; }
+
+/* --- Level tiles compact --- */
+.level-tiles { gap: 6px; }
+.level-tile { padding: 8px 10px; }
+.level-tile strong { font-size: 14px; }
+.level-tile em { font-size: 9px; }
+.level-note { font-size: 11px; line-height: 1.4; margin: 4px 0 0; }
+
+/* --- Tabs compact --- */
+.tabs { gap: 4px; margin: 8px 0; }
+.tabs button { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+
+/* --- Responsive --- */
+@media (max-width: 1024px) {
+  .pulse-grid { grid-template-columns: 1fr 1fr; }
+  .pulse-card.wide-pulse { grid-column: span 1; }
+}
+@media (max-width: 900px) {
+  .premium-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .page.compact { padding: 10px 0 16px; }
+  .topbar { grid-template-columns: 1fr; }
+  .sp-card { min-width: 0; max-width: 100%; }
+  .ai-persona-card__hero { grid-template-columns: 48px 1fr; gap: 10px; }
+  .ai-persona-card__persona-icon { width: 48px; height: 48px; }
+  .ai-persona-card__persona-emoji { font-size: 26px; }
+  .pulse-grid { grid-template-columns: 1fr; }
+  .ds-card__hero { grid-template-columns: 1fr; }
+  .da-card__hero, .pp-card__hero { grid-template-columns: 36px 1fr; }
+  .da-day__circle, .pp-day__circle, .ws-day__circle { width: 20px; height: 20px; }
+  .recent-activity-card { max-height: 280px; }
+  .progress-moment { padding: 6px 0; margin: 4px 0 2px; }
+  .progress-moment__text { font-size: 11px; }
+}

@@ -1,0 +1,35 @@
+/* HABIT RADAR CARD */
+.hr-card { background: #ffffff; border: 1px solid #d9e1ec; border-radius: 14px; padding: 16px 18px 12px; margin: 12px 0; box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05); display: grid; gap: 12px; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #1e293b; }
+.hr-card__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.hr-card__eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #0e7490; }
+.hr-card__toggle { display: inline-flex; background: #f1f5f9; border-radius: 999px; padding: 2px; }
+.hr-card__toggle-btn { appearance: none; border: none; background: transparent; color: #64748b; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; padding: 5px 10px; border-radius: 999px; cursor: pointer; transition: background 0.2s ease, color 0.2s ease; }
+.hr-card__toggle-btn.is-active { background: #ffffff; color: #0e7490; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08); }
+.hr-card__body { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: start; }
+.hr-card__chart { display: grid; justify-items: center; gap: 6px; }
+.hr-radar { display: block; }
+.hr-card__legend { display: inline-flex; gap: 12px; font-size: 10px; color: #475569; }
+.hr-card__legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid; margin-right: 4px; vertical-align: middle; }
+.hr-card__side { display: grid; gap: 10px; }
+.hr-card__pills { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.hr-pill { display: grid; gap: 2px; padding: 8px 10px; border-radius: 10px; border: 1px solid; }
+.hr-pill--strong { background: #D1FAE5; border-color: #6EE7B7; color: #064E3B; }
+.hr-pill--growth { background: #FFF7ED; border-color: #FED7AA; color: #9A3412; }
+.hr-pill__eyebrow { font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.78; }
+.hr-pill__name { font-size: 14px; font-weight: 900; line-height: 1.1; margin: 0; }
+.hr-pill__meta { font-size: 10px; font-weight: 600; opacity: 0.85; }
+.hr-card__tip { padding: 8px 10px; background: linear-gradient(135deg, rgba(8,145,178,0.06), rgba(99,102,241,0.06)); border: 1px solid rgba(8,145,178,0.18); border-radius: 10px; }
+.hr-card__tip-eyebrow { display: block; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #0e7490; margin-bottom: 2px; }
+.hr-card__tip-body { margin: 0; font-size: 12px; line-height: 1.5; color: #1e293b; }
+.hr-card__axes { display: grid; gap: 4px; padding: 8px 10px; background: #f8fafc; border-radius: 10px; border: 1px solid #e5e7eb; }
+.hr-axis-row { display: grid; grid-template-columns: 90px 1fr 28px 48px; align-items: center; gap: 8px; font-size: 11px; }
+.hr-axis-row__name { font-weight: 700; color: #374151; }
+.hr-axis-row__bar { height: 6px; background: rgba(15, 23, 42, 0.06); border-radius: 999px; overflow: hidden; }
+.hr-axis-row__fill { height: 100%; border-radius: 999px; transition: width 0.6s ease-out; }
+.hr-axis-row__score { font-weight: 900; font-variant-numeric: tabular-nums; color: #0f172a; text-align: right; }
+.hr-axis-row__delta { font-size: 10px; font-weight: 800; text-align: right; }
+.hr-axis-row__delta.is-up { color: #047857; }
+.hr-axis-row__delta.is-down { color: #B45309; }
+.hr-card__foot { margin: 0; font-size: 10px; color: #94A3B8; letter-spacing: 0.02em; }
+@media (max-width: 900px) { .hr-card__body { grid-template-columns: 1fr; } .hr-card__chart { justify-items: center; } .hr-radar { max-width: 100%; height: auto; } }
+@media (max-width: 600px) { .hr-axis-row { grid-template-columns: 70px 1fr 24px 42px; font-size: 10px; } }

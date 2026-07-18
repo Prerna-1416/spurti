@@ -1,0 +1,18 @@
+export { ConfettiCanvas, fireConfetti } from './ConfettiBurst';
+export { AnimatedCounter } from './AnimatedCounter';
+export { Sparkles } from './Sparkles';
+export { ProgressBar, ProgressRing } from './ProgressAnimator';
+export { RewardPopup, makeRewardId } from './RewardPopup';
+export type { RewardSpec, RewardKind } from './RewardPopup';
+export { AchievementPopup } from './AchievementPopup';
+export type { Achievement } from './AchievementPopup';
+export { ChestOpening } from './ChestOpening';
+export type { ChestTier } from './ChestOpening';
+export { LegendMoment } from './LegendMoment';
+export { DailyLoginBonus } from './DailyLoginBonus';
+export { StreakMilestone, getNextMilestone, isMilestoneToday } from './StreakMilestone';
+export { ActivityFeedPanel, ActivityFeedToasts, pushActivity } from './ActivityFeed';
+export type { ActivityEvent } from './ActivityFeed';
+export { HoverCard } from './HoverCard';
+export { playDemo, chestTierForDay } from './demoSequence';
+export type { DemoCallbacks } from './demoSequence';

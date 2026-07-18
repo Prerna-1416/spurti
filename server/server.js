@@ -805,8 +805,11 @@ learningTreeApi.post('/sync-from-sp', async (req, res) => {
 });
 
 app.use('/api', api);
+import momentumApi from './routes/momentum.js';
+app.use('/api', momentumApi);
 app.use('/api/learning-tree', learningTreeApi);
 app.use('/spurti/api', api);
+app.use('/spurti/api', momentumApi);
 app.use('/spurti/api/learning-tree', learningTreeApi);
 app.use('/spurti/api', api);
 

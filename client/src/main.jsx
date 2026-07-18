@@ -1,8 +1,61 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 import './learning-tree-styles.css';
-import { LearningTree } from './components/learning-tree/LearningTree';
+import './features/gamification/gamification.css';
+import './components/animations/animations.css';
+import './components/premium/premium.css';
+import { loadState } from './features/gamification/storage';
+import { WeeklyStreakTracker } from './components/premium/WeeklyStreakTracker';
+import { RecentActivityCard } from './components/premium/RecentActivityCard';
+import { SPCard } from './components/premium/SPCard';
+import { MilestoneCelebration } from './components/premium/MilestoneCelebration';
+import { FloatingEmojiLayer, useEmojiReactions } from './components/premium/FloatingEmojis';
+import { DailyAttendanceCard } from './components/premium/DailyAttendanceCard';
+import './components/premium/DailyAttendanceCard.css';
+import { PollParticipationCard } from './components/premium/PollParticipationCard';
+import './components/premium/PollParticipationCard.css';
+import { DailyStreakCard } from './components/premium/DailyStreakCard';
+import './components/premium/DailyStreakCard.css';
+import { isMilestoneCrossed } from './components/premium/leagues';
+import { AICompanionHeader } from './components/premium/AICompanionHeader';
+import { SynapticSyncCard } from './components/premium/SynapticSyncCard';
+import './components/premium/SynapticSyncCard.css';
+import { StandingCard } from './components/premium/StandingCard';
+import './components/premium/StandingCard.css';
+import './components/premium/AICompanionHeader.css';
+import { AIPersonaCard } from './components/persona/AIPersonaCard';
+import { PersonaSignalsModal } from './components/persona/PersonaSignalsModal';
+import { PersonaHistoryTab } from './components/persona/PersonaHistoryTab';
+import { SparkleAIBadge } from './components/persona/SparkleAIBadge';
+import { classifyPersona, getMissionProgress } from './components/persona/personaEngine.js';
+import { PERSONAS } from './components/persona/personas.js';
+import { generatePersonaSuggestions } from './components/persona/personaSuggestions.js';
+import { PersonaSuggestions } from './components/persona/PersonaSuggestions.tsx';
+import './components/persona/persona.css';
+import './components/dashboard.css';
+import { MomentumMeterCard } from './components/momentum/MomentumMeterCard';
+import { MomentumInfoModal } from './components/momentum/MomentumInfoModal';
+import './components/momentum/momentum.css';
+import { HabitRadarCard } from './components/habit-radar/HabitRadarCard';
+import './components/habit-radar/habit-radar.css';
+import { EntryPill } from './components/replay/EntryPill.tsx';
+import { WeeklyReplayModal } from './components/replay/WeeklyReplayModal.tsx';
+import { FinalJourneyModal } from './components/replay/FinalJourneyModal.tsx';
+import { ShareCard } from './components/replay/ShareCard.tsx';
+import { isFinalJourneyUnlocked, buildReplayHistory, buildFinalJourney } from './components/replay/replayEngine';
+import './components/replay/replay.css';
+import {
+  ConfettiCanvas,
+  RewardPopup,
+  AchievementPopup,
+  ChestOpening,
+  LegendMoment,
+  DailyLoginBonus,
+  StreakMilestone,
+  ActivityFeedToasts
+} from './components/animations';
 
 const APP_BASE = window.location.pathname.startsWith('/spurti') ? '/spurti' : '';
 const API = `${APP_BASE}/api`;
@@ -70,14 +123,53 @@ function App() {
   }
   if (view === 'student' && profile) {
     return (
-      <>
-        <StudentView profile={profile} onBack={config.allowStudentSearch ? () => setView('landing') : null} />
-        <SurveyModal
-          survey={config.survey}
-          student={profile.student}
-          onDone={() => setProfile(prev => ({ ...prev, student: { ...prev.student, surveyCompleted: true } }))}
-        />
-      </>
+      <DashboardExperience student={profile.student}>
+        {(exp) => (
+          <>
+            <StudentView
+              profile={profile}
+              onBack={config.allowStudentSearch ? () => setView('landing') : null}
+              exp={exp}
+            />
+            <ConfettiCanvas />
+            <RewardPopup reward={exp.reward} onClose={() => exp.setReward(null)} onCollected={() => exp.burstEmojis(10, document.querySelector('.reward-card'))} />
+            <AchievementPopup achievement={exp.achievement} onClose={() => exp.setAchievement(null)} />
+            <ChestOpening
+              tier={exp.chest}
+              rewardLabel={exp.chestReward.label}
+              rewardEmoji={exp.chestReward.emoji}
+              onClose={() => exp.setChest(null)}
+            />
+            <LegendMoment show={exp.showLegend} onClose={() => exp.setShowLegend(false)} />
+            <MilestoneCelebration
+              milestone={exp.pendingMilestone}
+              totalSp={profile.student.totalSp + exp.todayDelta}
+              onClose={() => exp.clearMilestone()}
+            />
+            <DailyLoginBonus
+              open={exp.showLogin}
+              bonusSp={10}
+              onCollect={() => { exp.setShowLogin(false); exp.pushActivityEvent({ type: 'login', sp: 10, label: 'Daily Login Bonus' }); }}
+              onClose={() => exp.setShowLogin(false)}
+            />
+            <ActivityFeedToasts
+              toasts={exp.toasts}
+              onExpire={(id) => exp.expireToast(id)}
+            />
+            <FloatingEmojiLayer reactions={exp.floatingReactions} />
+            {!exp.isDemoPlaying && (
+              <button
+                type="button"
+                className="demo-fab"
+                onClick={exp.playDemo}
+                title="Play a scripted celebration sequence"
+              >
+                ▶ Demo
+              </button>
+            )}
+          </>
+        )}
+      </DashboardExperience>
     );
   }
   if (view === 'excused' && excused) {
@@ -255,38 +347,149 @@ function SearchModal({ onClose, onStudent }) {
   );
 }
 
-function StudentView({ profile, onBack }) {
+function StudentView({ profile, onBack, exp }) {
   const [tab, setTab] = useState('bank');
-  const [showLearningTree, setShowLearningTree] = useState(false);
+  const [weeklyOpen, setWeeklyOpen] = useState(false);
+  const [personaModalOpen, setPersonaModalOpen] = useState(false);
+  const personaRef = useRef(null);
   const { student } = profile;
   const badges = useMemo(() => buildBadges(profile), [profile]);
   const nextActions = useMemo(() => buildNextActions(profile), [profile]);
 
-  if (showLearningTree) {
-    return <LearningTree onClose={() => setShowLearningTree(false)} />;
-  }
+  const personaClassification = useMemo(
+    () => classifyPersona(profile, { ...(exp || {}), personaSignals: null }),
+    [profile, exp]
+  );
+
+  const personaSuggestions = useMemo(
+    () => generatePersonaSuggestions(profile, personaClassification),
+    [profile, personaClassification]
+  );
+
+  const personaWithMission = useMemo(() => {
+    if (!personaClassification) return null;
+    const id = personaClassification.personaId;
+    const basePersona = PERSONAS[id] || PERSONAS.learning;
+    if (personaClassification.insufficient) return { ...personaClassification, persona: basePersona };
+    const mission = getMissionProgress(id, profile, exp);
+    return {
+      ...personaClassification,
+      persona: {
+        ...basePersona,
+        mission: { ...basePersona.mission, progress: mission.progress, target: mission.target }
+      }
+    };
+  }, [personaClassification, profile, exp]);
+
+  const scrollToPersona = useCallback(() => {
+    if (personaRef.current) {
+      personaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, []);
+
+  const lastPersonaUpdated = useMemo(() => {
+    try { return localStorage.getItem(`spurti_persona_${(student?.email || '').toLowerCase()}`); }
+    catch { return null; }
+  }, [student?.email]);
+
+  useEffect(() => {
+    try {
+      const key = `spurti_persona_${(student?.email || '').toLowerCase()}`;
+      localStorage.setItem(key, new Date().toISOString());
+    } catch {}
+  }, [personaClassification?.personaId, student?.email]);
 
   return (
     <main className="page compact">
+      <ReplaySection profile={profile} />
       <header className="topbar">
         {onBack ? <button className="secondary" onClick={onBack}>Back</button> : <span />}
         <div>
           <p className="eyebrow">Student Spurti Bank</p>
-          <h1>{student.name}</h1>
+          <h1>
+            {student.name}
+            {personaWithMission && (
+              <span style={{ marginLeft: 10, verticalAlign: 'middle', display: 'inline-block' }}>
+                <SparkleAIBadge onClick={() => setPersonaModalOpen(true)} />
+              </span>
+            )}
+          </h1>
         </div>
-        <div className="score-card"><span>SP</span><strong>{student.totalSp}</strong><em>Rank {student.rank} of {student.cohortSize}</em></div>
+        <SPCard
+          totalSp={student.totalSp}
+          rank={student.rank}
+          cohortSize={student.cohortSize}
+          todayDelta={exp?.todayDelta || 0}
+          isReceiving={exp?.isReceiving || false}
+        />
       </header>
-      <LevelStatus student={student} />
-      <StudentPulse profile={profile} badges={badges} nextActions={nextActions} />
-      <div className="tree-launcher">
-        <button className="tree-btn" onClick={() => setShowLearningTree(true)}>
-          🌳 My Learning Tree
-        </button>
+
+      <div ref={personaRef}>
+        <AICompanionHeader
+          studentName={student.name}
+          personaLabel={personaWithMission?.persona?.label}
+          personaEmoji={personaWithMission?.persona?.emoji}
+          onPersonaClick={() => setPersonaModalOpen(true)}
+          hasPersona={!!personaWithMission}
+          totalSp={Number(student.totalSp) || 0}
+          streakDays={Number(exp?.streakDays) || 0}
+        />
+        <PersonaSignalsModal
+          open={personaModalOpen}
+          onClose={() => setPersonaModalOpen(false)}
+          personaId={personaWithMission?.personaId}
+          signals={personaWithMission?.signals}
+        />
       </div>
-      <Tabs tab={tab} setTab={setTab} tabs={[['bank','SP Bank'], ['polls','Polls'], ['leaderboard','Leaderboard']]} />
+
+      <GamificationRow profile={profile} exp={exp} persona={personaWithMission} />
+      {exp?.streakDays > 0 && (
+        <div style={{ margin: '12px 0' }}>
+          <StreakMilestone days={exp.streakDays} isCelebrating={exp.streakCelebrating} />
+        </div>
+      )}
+      <LevelStatus student={student} />
+      <StudentPulse
+        profile={profile}
+        badges={badges}
+        nextActions={nextActions}
+        exp={exp}
+      />
+      <HabitRadarRow profile={profile} exp={exp} />
+      <Tabs tab={tab} setTab={setTab} tabs={[['bank','SP Bank'], ['polls','Polls'], ['leaderboard','Leaderboard'], ['persona','My Persona'], ['replays','Replays']]} />
       {tab === 'bank' && <SpBank transactions={profile.transactions} />}
       {tab === 'polls' && <Polls polls={profile.polls} />}
       {tab === 'leaderboard' && <LeaderboardTabs overall={profile.leaderboard} group={profile.groupLeaderboard} groupLabel={student.leaderboardGroupLabel} />}
+      {tab === 'persona' && (
+        <PersonaHistoryTab
+          classification={personaWithMission}
+          history={[]}
+          lastUpdated={lastPersonaUpdated}
+        />
+      )}
+      {tab === 'replays' && (
+        <section className="replay-history-tab">
+          <h3 style={{ margin: '12px 0 8px' }}>📼 Replay History</h3>
+          <p style={{ margin: '0 0 12px', color: '#64748b', fontSize: 12 }}>Past weekly recaps synthesized from your activity data. Click any to re-watch.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
+            {buildReplayHistory(profile, 6).map((w, i) => (
+              <button
+                key={i}
+                type="button"
+                className="replay-history-card"
+                onClick={() => { setWeeklyOpen(true); }}
+                style={{ textAlign: 'left', padding: 10, border: '1px solid #d9e1ec', borderRadius: 10, background: '#fff', cursor: 'pointer' }}
+              >
+                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7C3AED' }}>Week of</div>
+                <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 6 }}>{w.weekStartIso}</div>
+                <div style={{ fontSize: 11, color: '#475569' }}>
+                  {w.sessionsAttended} sessions · {w.pollsAnswered} polls · +{w.spEarned} SP
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }
@@ -351,7 +554,8 @@ function LeaderboardTabs({ overall = [], group = [], groupLabel }) {
   );
 }
 
-function StudentPulse({ profile, badges, nextActions }) {
+function StudentPulse({ profile, badges, nextActions, personaSuggestions, personaLabel, personaEmoji, exp }) {
+  const [momentumInfoOpen, setMomentumInfoOpen] = useState(false);
   const { student, cohort, attendance, polls, transactions } = profile;
   const qualified = attendance.filter(a => a.qualified).length;
   const pollAttempted = polls.reduce((sum, p) => sum + p.attemptedQuestions, 0);
@@ -359,11 +563,15 @@ function StudentPulse({ profile, badges, nextActions }) {
   const trend = transactions.map(tx => ({ label: tx.sessionLabel || 'Start', value: tx.balanceAfter }));
   return (
     <section className="pulse-grid">
-      <div className="pulse-card progress-card">
-        <span>Standing</span>
-        <strong>Rank {student.rank}</strong>
-        <p>{cohort.pointsToTop50 === 0 ? 'You are in the Top 50.' : `${cohort.pointsToTop50} SP needed to enter Top 50.`}</p>
-        <p>{cohort.pointsToNextRank === 0 ? 'You are leading your comparison group.' : `${cohort.pointsToNextRank} SP needed for next rank.`}</p>
+      <div className="pulse-card">
+        <StandingCard
+          rank={student.rank}
+          totalSp={student.totalSp}
+          pointsToTop50={cohort.pointsToTop50}
+          pointsToNextRank={cohort.pointsToNextRank}
+          top50Cutoff={cohort.top50Cutoff ?? 0}
+          missedAttendance={false}
+        />
       </div>
       <div className="pulse-card">
         <span>Cohort comparison</span>
@@ -375,24 +583,37 @@ function StudentPulse({ profile, badges, nextActions }) {
         </div>
       </div>
       <div className="pulse-card">
-        <span>Session health</span>
-        <div className="compare-list">
-          <b>{qualified}/{attendance.length} attendance qualified</b>
-          <b>{pollAttempted}/{pollTotal} polls attempted</b>
-        </div>
-      </div>
-      <div className="pulse-card">
         <span>Badges</span>
         <div className="badge-row">{badges.map(badge => <em key={badge}>{badge}</em>)}</div>
       </div>
       <div className="pulse-card wide-pulse">
-        <span>SP trend</span>
-        <Sparkline points={trend} />
+        <MomentumMeterCard
+          profile={profile}
+          exp={{ streakDays: exp?.streakDays || 0 }}
+          onInfoClick={() => setMomentumInfoOpen(true)}
+        />
       </div>
       <div className="pulse-card wide-pulse">
         <span>What to do next</span>
-        <ul className="next-list">{nextActions.map(action => <li key={action}>{action}</li>)}</ul>
+        {personaSuggestions && personaSuggestions.length > 0 ? (
+          <PersonaSuggestions
+            suggestions={personaSuggestions}
+            personaLabel={personaLabel}
+            personaEmoji={personaEmoji}
+          />
+        ) : (
+          <ul className="next-list">{nextActions.map(action => <li key={action}>{action}</li>)}</ul>
+        )}
       </div>
+      <MomentumInfoModal open={momentumInfoOpen} onClose={() => setMomentumInfoOpen(false)} />
+    </section>
+  );
+}
+
+function HabitRadarRow({ profile, exp }) {
+  return (
+    <section className="habit-radar-row" aria-label="Habit Radar">
+      <HabitRadarCard profile={profile} exp={exp} />
     </section>
   );
 }
@@ -809,7 +1030,7 @@ function SurveyModal({ survey, student, onDone }) {
     if (!enabled) return;
     const id = setInterval(() => verifyStatus(false), 5000);
     return () => clearInterval(id);
-  }, [enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enabled]); // eslint-disable-line react/hooks/exhaustive-deps
 
   if (!enabled) return null;
 
@@ -850,5 +1071,208 @@ function SurveyModal({ survey, student, onDone }) {
   );
 }
 
+function GamificationRow({ profile, exp }) {
+  const { student, polls } = profile;
+  const [state, setState] = useState(() => loadState(student.email));
+
+  const today = new Date().toISOString().slice(0, 10);
+  const pollsList = Array.isArray(polls) ? polls : [];
+  const hasUnattempted = pollsList.some(p => p && p.totalQuestions > 0 && (p.attemptedQuestions || 0) < p.totalQuestions);
+  const todaysPoll = pollsList.some(p => p && (p.date ? String(p.date).slice(0, 10) === today : true));
+  const hasOpenPollToday = hasUnattempted && todaysPoll;
+
+  const doneToday = state.pollCompletedDates.includes(today);
+  const activities = (exp?.events || []).map(e => ({
+    id: e.id,
+    type: e.type,
+    sp: e.sp,
+    label: e.label,
+    timeAgo: 'Just now'
+  }));
+
+  const handleClaimAttendance = (sp) => {
+    const next = {
+      ...state,
+      pollCompletedDates: [...state.pollCompletedDates, today]
+    };
+    setState(next);
+    if (exp) {
+      exp.pushActivityEvent({ type: 'attendance', sp, label: 'Daily Attendance' });
+      exp.setReward({
+        kind: 'attendance',
+        title: 'Attendance Complete',
+        amount: sp,
+        message: 'You showed up today. Keep going!',
+        emoji: '✅',
+        flavor: 'Consistency beats talent.'
+      });
+    }
+  };
+
+  const handleClaimPoll = (sp) => {
+    const next = {
+      ...state,
+      pollCompletedDates: [...state.pollCompletedDates, today]
+    };
+    setState(next);
+    if (exp) {
+      exp.pushActivityEvent({ type: 'poll', sp, label: 'Daily Poll' });
+      exp.setReward({
+        kind: 'poll',
+        title: 'Poll Submitted',
+        amount: sp,
+        message: 'Your voice was heard.',
+        emoji: '🗳️',
+        flavor: 'Every poll shapes the cohort.'
+      });
+    }
+  };
+
+  const momentumFacts = useMemo(() => [
+    { icon: '\uD83C\uDFAF', text: "You're only one session away from a 2-day streak." },
+    { icon: '\uD83C\uDF31', text: 'Consistency beats intensity.' },
+    { icon: '\uD83D\uDCA1', text: 'Students with 5-day streaks participate 3\u00D7 more.' }
+  ], []);
+  const [factIdx, setFactIdx] = useState(() => Math.floor(Math.random() * momentumFacts.length));
+  useEffect(() => {
+    const id = setInterval(() => setFactIdx((i) => (i + 1) % momentumFacts.length), 7000);
+    return () => clearInterval(id);
+  }, [momentumFacts.length]);
+
+  return (
+    <>
+      <div className="premium-row">
+        <DailyAttendanceCard
+          email={student.email}
+          pollCompletedDates={state.pollCompletedDates}
+          streakDays={exp?.streakDays || 0}
+          onClaim={handleClaimAttendance}
+        />
+        <PollParticipationCard
+          email={student.email}
+          pollCompletedDates={state.pollCompletedDates}
+          onClaim={handleClaimPoll}
+        />
+      </div>
+
+      <div className="progress-moment" aria-live="polite">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={factIdx}
+            className="progress-moment__body"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
+          >
+            <span className="progress-moment__icon" aria-hidden="true">{momentumFacts[factIdx].icon}</span>
+            <span className="progress-moment__text">{momentumFacts[factIdx].text}</span>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <div className="premium-row">
+        <DailyStreakCard
+          streakDays={Math.max(state.currentStreak, state.longestStreak)}
+          bestStreak={state.longestStreak}
+          onClaimMilestone={(milestone, sp) => {
+            if (exp) {
+              exp.pushActivityEvent({ type: 'streak', sp, label: `${milestone}-Day Streak Milestone` });
+              exp.setReward({
+                kind: 'streak',
+                title: 'Streak Milestone Reached!',
+                amount: sp,
+                message: `${milestone} days. Pure willpower.`,
+                emoji: '🔥',
+                flavor: 'Consistency is the cheat code.'
+              });
+            }
+          }}
+        />
+        {exp?.personaSuggestions && exp.personaSuggestions.length > 0 ? (
+          <PersonaSuggestions
+            suggestions={exp.personaSuggestions}
+            personaLabel={exp.personaLabel}
+            personaEmoji={exp.personaEmoji}
+          />
+        ) : (
+          <SynapticSyncCard
+            completedSessions={state.pollCompletedDates.length}
+            totalSessions={7}
+          />
+        )}
+      </div>
+
+      <div className="premium-row">
+        <WeeklyStreakTracker
+          email={student.email}
+          pollCompletedDates={state.pollCompletedDates}
+          doneToday={doneToday}
+          onCompleteToday={() => {
+            const next = { ...state, pollCompletedDates: [...state.pollCompletedDates, today] };
+            setState(next);
+          }}
+        />
+        <RecentActivityCard activities={activities} />
+      </div>
+    </>
+  );
+}
+
+function ReplaySection({ profile }) {
+  const [weeklyOpen, setWeeklyOpen] = useState(false);
+  const [finalOpen, setFinalOpen] = useState(false);
+  const [share, setShare] = useState(null);
+  const [unlocked, setUnlocked] = useState(false);
+  useEffect(() => {
+    setUnlocked(isFinalJourneyUnlocked(profile || {}));
+  }, [profile]);
+  if (!profile || !profile.student) return null;
+  const history = buildReplayHistory(profile, 6);
+  return (
+    <>
+      <div className="entry-pill-row">
+        <EntryPill kind="weekly" onClick={() => setWeeklyOpen(true)} />
+        {unlocked && (
+          <span style={{ display: 'inline-block', marginLeft: 10 }}>
+            <EntryPill kind="final" onClick={() => setFinalOpen(true)} />
+          </span>
+        )}
+      </div>
+      <WeeklyReplayModal open={weeklyOpen} onClose={() => setWeeklyOpen(false)} profile={profile} onOpenShare={() => setShare({ kind: 'weekly' })} />
+      <FinalJourneyModal open={finalOpen} onClose={() => setFinalOpen(false)} profile={profile} studentName={profile.student.name} onOpenShare={() => setShare({ kind: 'final' })} />
+      {share && (
+        <ShareCard
+          open={true}
+          kind={share.kind}
+          profile={profile}
+          onClose={() => setShare(null)}
+        />
+      )}
+    </>
+  );
+}
+
+function DashboardExperience({ student, children }) {
+  // Minimal inline stub: provides a stable `exp` object with no-op defaults
+  // so children render without crashing. Animation/reward features are inert.
+  const exp = useMemo(() => ({
+    reward: null, setReward: () => {},
+    achievement: null, setAchievement: () => {},
+    chest: null, setChest: () => {},
+    chestReward: { label: '', emoji: '' },
+    showLegend: false, setShowLegend: () => {},
+    pendingMilestone: null, clearMilestone: () => {},
+    showLogin: false, setShowLogin: () => {},
+    toasts: [], expireToast: () => {},
+    floatingReactions: [], burstEmojis: () => {},
+    events: [], pushActivityEvent: () => {},
+    streakDays: 0, streakCelebrating: false,
+    todayDelta: 0, isReceiving: false,
+    isDemoPlaying: false, playDemo: () => {},
+    personaSuggestions: [], personaLabel: '', personaEmoji: ''
+  }), []);
+  return <>{children(exp)}</>;
+}
 
 createRoot(document.getElementById('root')).render(<App />);

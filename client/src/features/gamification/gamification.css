@@ -1,0 +1,472 @@
+.gamify-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 18px 0 12px;
+}
+
+.gamify-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 14px;
+  padding: 16px 18px;
+  background: #ffffff;
+  border: 1px solid #d9e1ec;
+  border-radius: 12px;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+}
+.gamify-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.14);
+}
+
+.gamify-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(23, 107, 135, 0.0), rgba(78, 169, 116, 0.0));
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: -1;
+}
+
+.gamify-card--streak::before {
+  background: linear-gradient(135deg, rgba(255, 130, 50, 0.18), rgba(255, 200, 80, 0.10));
+  opacity: 1;
+}
+.gamify-card--streak.is-completed::before {
+  background: linear-gradient(135deg, rgba(78, 169, 116, 0.18), rgba(23, 107, 135, 0.12));
+}
+.gamify-card--streak.is-broken::before {
+  background: linear-gradient(135deg, rgba(180, 35, 24, 0.16), rgba(120, 35, 24, 0.08));
+}
+
+.gamify-card--badge::before {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.16), rgba(217, 119, 6, 0.10));
+  opacity: 1;
+}
+.gamify-card--badge.is-unlocked::before {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.28), rgba(217, 119, 6, 0.18));
+}
+.gamify-card--badge.is-locked::before {
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.14), rgba(15, 23, 42, 0.06));
+}
+
+.gamify-card--skip::before {
+  background: linear-gradient(135deg, rgba(106, 58, 160, 0.14), rgba(176, 120, 222, 0.10));
+  opacity: 1;
+}
+.gamify-card--skip.is-empty::before {
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.12), rgba(15, 23, 42, 0.04));
+}
+
+.gamify-card__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.06);
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  position: relative;
+}
+.gamify-card--streak .gamify-card__icon { background: rgba(255, 130, 50, 0.15); }
+.gamify-card--badge .gamify-card__icon { background: rgba(212, 175, 55, 0.18); }
+.gamify-card--skip .gamify-card__icon  { background: rgba(106, 58, 160, 0.14); }
+
+.gamify-card__icon .flame {
+  font-size: 28px;
+  filter: drop-shadow(0 2px 4px rgba(255, 130, 50, 0.4));
+}
+.gamify-card__icon .streak-count {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: #ffffff;
+  color: #b42318;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(180, 35, 24, 0.2);
+}
+.gamify-card--streak.is-completed .gamify-card__icon .streak-count {
+  color: #12805c;
+  border-color: rgba(18, 128, 92, 0.3);
+}
+.gamify-card--streak.is-broken .gamify-card__icon .streak-count {
+  color: #64748b;
+  border-color: rgba(100, 116, 139, 0.3);
+}
+.gamify-card__icon .badge-medal {
+  font-size: 30px;
+}
+.gamify-card__icon .skip-tokens-icon {
+  font-size: 28px;
+  font-weight: 800;
+  color: #6a3aa0;
+}
+
+.gamify-card__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.gamify-card__eyebrow {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.gamify-card__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: #172033;
+  line-height: 1.2;
+}
+.gamify-card__lede {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+}
+.gamify-card__hint {
+  margin: 8px 0 0;
+  font-size: 11px;
+  font-style: italic;
+  color: #64748b;
+}
+
+/* ====== Streak card specifics ====== */
+.streak-countdown {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 6px 0;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.06);
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  width: fit-content;
+}
+.gamify-card--streak.is-broken .streak-countdown {
+  background: rgba(180, 35, 24, 0.08);
+  border-color: rgba(180, 35, 24, 0.18);
+}
+.streak-countdown__label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.streak-countdown__value {
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 18px;
+  font-weight: 800;
+  color: #b42318;
+  letter-spacing: 0.02em;
+}
+.gamify-card--streak.is-completed .streak-countdown__value { color: #12805c; }
+.gamify-card--streak.is-broken .streak-countdown__value { color: #b42318; }
+
+.streak-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.streak-btn {
+  appearance: none;
+  border: none;
+  background: linear-gradient(135deg, #176b87, #4ea974);
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.streak-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(23, 107, 135, 0.3);
+}
+.streak-btn:disabled {
+  cursor: default;
+  background: rgba(18, 128, 92, 0.7);
+  opacity: 0.85;
+}
+.gamify-card--streak.is-broken .streak-btn {
+  background: linear-gradient(135deg, #b42318, #d97706);
+}
+.streak-meta {
+  font-size: 11px;
+  color: #64748b;
+}
+.streak-meta b { color: #172033; }
+
+.streak-celebrate {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #b42318;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(180, 35, 24, 0.2);
+}
+
+/* ====== Badge card specifics ====== */
+.badge-progress {
+  margin: 6px 0;
+}
+.badge-progress__track {
+  position: relative;
+  height: 8px;
+  background: rgba(15, 23, 42, 0.08);
+  border-radius: 999px;
+  overflow: visible;
+}
+.badge-progress__fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s ease-out;
+}
+.badge-progress__cutoff {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: 100%;
+  width: 2px;
+  background: rgba(180, 35, 24, 0.5);
+  border-radius: 1px;
+}
+.badge-progress__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #64748b;
+}
+.badge-progress__meta b { color: #172033; }
+.badge-progress__state.is-yes { color: #12805c; font-weight: 700; }
+.badge-progress__state.is-no  { color: #b42318; font-weight: 700; }
+
+.badge-tabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.badge-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.badge-tab:hover { background: rgba(15, 23, 42, 0.08); }
+.badge-tab.is-active {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.2);
+  color: #172033;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+}
+.badge-tab.is-ok .badge-tab__dot {
+  box-shadow: 0 0 0 2px rgba(18, 128, 92, 0.4);
+}
+.badge-tab__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.badge-claim {
+  appearance: none;
+  border: none;
+  background: linear-gradient(135deg, #d4af37, #d97706);
+  color: #3a1f06;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  margin-top: 8px;
+}
+.badge-claim:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(212, 175, 55, 0.4);
+}
+.badge-claim:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.gamify-card--badge.is-locked .badge-claim {
+  background: rgba(15, 23, 42, 0.08);
+  color: #64748b;
+}
+
+.badge-celebrate {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #3a1f06;
+  background: linear-gradient(135deg, #fde047, #d97706);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(217, 119, 6, 0.4);
+}
+
+/* ====== Skip tokens card specifics ====== */
+.skip-chips {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+.skip-chip {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #b078de, #6a3aa0);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  font-weight: 800;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 10px rgba(106, 58, 160, 0.3);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.skip-chip.is-used {
+  background: rgba(15, 23, 42, 0.15);
+  color: #64748b;
+  box-shadow: none;
+  text-decoration: line-through;
+}
+.gamify-card--skip.is-empty .skip-chip {
+  background: rgba(15, 23, 42, 0.1);
+  color: #64748b;
+  box-shadow: none;
+}
+
+.skip-btn {
+  appearance: none;
+  border: 1px solid rgba(106, 58, 160, 0.3);
+  background: rgba(106, 58, 160, 0.06);
+  color: #6a3aa0;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: fit-content;
+}
+.skip-btn:hover:not(:disabled) {
+  background: rgba(106, 58, 160, 0.12);
+  border-color: rgba(106, 58, 160, 0.5);
+}
+.skip-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.skip-confirm {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(106, 58, 160, 0.08);
+  border: 1px solid rgba(106, 58, 160, 0.2);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.skip-confirm__actions {
+  display: flex;
+  gap: 8px;
+}
+.skip-confirm__yes, .skip-confirm__no {
+  appearance: none;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.skip-confirm__yes {
+  background: #6a3aa0;
+  color: #ffffff;
+}
+.skip-confirm__no {
+  background: rgba(15, 23, 42, 0.08);
+  color: #64748b;
+}
+
+.skip-history {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #64748b;
+}
+.skip-history summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.skip-history ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+}
+.skip-history li {
+  display: flex;
+  justify-content: space-between;
+}
+
+.skip-flash {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  background: linear-gradient(135deg, #6a3aa0, #b078de);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* ====== Responsive ====== */
+@media (max-width: 1024px) {
+  .gamify-grid { grid-template-columns: 1fr 1fr; }
+  .gamify-card--badge { grid-column: span 2; }
+}
+@media (max-width: 640px) {
+  .gamify-grid { grid-template-columns: 1fr; gap: 12px; }
+  .gamify-card { grid-template-columns: 56px 1fr; padding: 14px; }
+  .gamify-card__icon { width: 56px; height: 56px; font-size: 24px; }
+  .gamify-card--badge { grid-column: span 1; }
+  .gamify-card__title { font-size: 15px; }
+  .streak-countdown__value { font-size: 16px; }
+}
