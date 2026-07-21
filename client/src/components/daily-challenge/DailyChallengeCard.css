@@ -1,0 +1,203 @@
+/* ============================================================
+   Daily Challenge Module — N-Queens
+   Light, premium aesthetic. Matches existing replay / premium
+   component tone (white card, soft shadow, restrained palette).
+   ============================================================ */
+
+.dc-card {
+  position: relative;
+  width: 100%;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  color: #1f2937;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: 14px 16px;
+  display: grid;
+  gap: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.dc-card:hover {
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03);
+  border-color: #d1d5db;
+}
+.dc-card__glare {
+  position: absolute; inset: 0; pointer-events: none; border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.08) 22%, transparent 42%, transparent 80%);
+  z-index: 0;
+}
+.dc-card > *:not(.dc-card__glare) { position: relative; z-index: 1; }
+.dc-card--loading, .dc-card--error {
+  text-align: center; padding: 18px; color: #6b7280; font-size: 12px;
+}
+.dc-card--error button {
+  margin-left: 8px; padding: 2px 8px; border: 1px solid #e5e7eb; border-radius: 5px; background: #f9fafb; cursor: pointer;
+}
+
+.dc-card__head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+}
+.dc-card__head-left { display: flex; flex-direction: column; gap: 2px; }
+.dc-card__eyebrow {
+  font-size: 9px; font-weight: 800; letter-spacing: 0.1em; color: #6b7280;
+  text-transform: uppercase;
+}
+.dc-card__title {
+  margin: 0; font-size: 15px; font-weight: 800; color: #1f2937; line-height: 1.2;
+}
+
+.dc-countdown {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+  padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+.dc-countdown__label { font-size: 7.5px; font-weight: 700; color: #9ca3af; letter-spacing: 0.06em; text-transform: uppercase; }
+.dc-countdown__time { font-size: 12px; font-weight: 800; color: #3b82f6; font-variant-numeric: tabular-nums; }
+
+.dc-intro {
+  display: grid; gap: 6px; font-size: 11px; color: #4b5563; line-height: 1.4;
+  background: #f8fafc; padding: 8px 10px; border-radius: 8px; border: 1px solid #e5e7eb;
+}
+.dc-intro__hint { color: #6b7280; font-size: 10px; margin: 0; }
+.dc-intro .dc-btn { justify-self: start; }
+
+.dc-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; line-height: 1;
+  padding: 6px 10px; border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.dc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.dc-btn--primary { background: #10b981; color: #fff; border-color: #10b981; }
+.dc-btn--primary:hover:not(:disabled) { background: #059669; border-color: #059669; }
+.dc-btn--ghost { background: #ffffff; color: #374151; border-color: #e5e7eb; }
+.dc-btn--ghost:hover:not(:disabled) { background: #f9fafb; border-color: #d1d5db; }
+
+/* ===== Board ===== */
+.dc-board-wrap { display: flex; justify-content: center; padding: 4px 0; }
+.dc-board {
+  display: grid;
+  width: min(100%, 360px);
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f9fafb;
+  user-select: none;
+}
+.dc-cell {
+  position: relative;
+  background: #ffffff;
+  border: 0;
+  border-right: 1px solid #f3f4f6;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #f59e0b;
+  transition: background 0.1s, transform 0.08s;
+  padding: 0;
+  outline: none;
+}
+.dc-cell--alt { background: #f3f4f6; }
+.dc-cell--queen { background: #ecfdf5; }
+.dc-cell--alt.dc-cell--queen { background: #d1fae5; }
+.dc-cell--locked { cursor: not-allowed; background: #eff6ff !important; }
+.dc-cell--locked::after {
+  content: '🔒'; position: absolute; bottom: 2px; right: 2px; font-size: 7px; opacity: 0.5;
+}
+.dc-cell--attack { color: #dc2626; }
+.dc-cell--attack.dc-cell--queen { background: #fee2e2; }
+.dc-cell:active:not(:disabled) { transform: scale(0.94); }
+.dc-cell:focus-visible { box-shadow: inset 0 0 0 2px #3b82f6; }
+
+/* ===== Toolbar ===== */
+.dc-toolbar {
+  display: flex; align-items: center; gap: 8px; justify-content: flex-end;
+  font-size: 10px; color: #6b7280;
+}
+.dc-toolbar__moves b { color: #1f2937; font-weight: 800; }
+
+/* ===== Result ===== */
+.dc-result {
+  display: grid; gap: 10px; padding: 10px;
+  background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 10px;
+}
+.dc-result__title { font-size: 14px; font-weight: 800; }
+.dc-result__stats {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 12px;
+  font-size: 10px; color: #4b5563;
+}
+.dc-result__stats b { color: #1f2937; font-weight: 800; margin-left: 2px; }
+.dc-result__sp { font-size: 11px; font-weight: 700; color: #10b981; }
+.dc-result__sp--pending { color: #3b82f6; }
+.dc-result__hint { font-size: 9px; color: #dc2626; }
+
+/* ===== Stats row ===== */
+.dc-stats {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  padding-top: 6px; border-top: 1px solid #f3f4f6;
+  font-size: 9.5px; color: #6b7280;
+}
+.dc-stats b { color: #1f2937; font-weight: 800; }
+
+/* ===== Leaderboard tab ===== */
+.dc-leaderboard {
+  background: #ffffff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 12px 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+.dc-leaderboard--err { color: #dc2626; font-size: 11px; }
+.dc-leaderboard h4 { margin: 0 0 8px; font-size: 12px; font-weight: 800; color: #1f2937; letter-spacing: 0.04em; }
+.dc-leaderboard table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.dc-leaderboard th {
+  text-align: left; font-weight: 700; color: #6b7280; padding: 6px 8px;
+  border-bottom: 1px solid #e5e7eb; font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase;
+}
+.dc-leaderboard td { padding: 6px 8px; border-bottom: 1px solid #f3f4f6; color: #1f2937; }
+.dc-leaderboard__empty { color: #9ca3af; text-align: center; font-style: italic; }
+.dc-row--missed { opacity: 0.6; }
+.dc-row--missed td { color: #9ca3af; }
+.dc-reward-legend {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-top: 8px; padding-top: 8px; border-top: 1px solid #f3f4f6;
+  font-size: 9.5px; color: #6b7280;
+}
+
+/* ===== History ===== */
+.dc-history { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 12px 14px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); }
+.dc-history h4 { margin: 0 0 8px; font-size: 12px; font-weight: 800; color: #1f2937; }
+.dc-history ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.dc-history li {
+  display: grid; grid-template-columns: 80px 50px 1fr 60px;
+  align-items: center; gap: 8px;
+  font-size: 10px; padding: 5px 8px; border-radius: 6px;
+  background: #f8fafc; border: 1px solid #e5e7eb;
+}
+.dc-history__date { font-weight: 800; color: #1f2937; }
+.dc-history__n { font-weight: 700; color: #6b7280; }
+.dc-history__count { color: #6b7280; font-size: 9.5px; }
+.dc-history__status { color: #3b82f6; font-weight: 700; text-align: right; text-transform: uppercase; font-size: 8.5px; }
+.dc-row--live .dc-history__status { color: #10b981; }
+
+/* ===== Badges ===== */
+.dc-badges {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  padding: 8px 10px; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 10px;
+}
+.dc-badges--empty { color: #9ca3af; font-size: 11px; font-style: italic; padding: 10px 12px; background: #fff; border-style: dashed; }
+.dc-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 9.5px; font-weight: 700;
+  padding: 3px 7px; border-radius: 12px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e; border: 1px solid #fcd34d;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .dc-card { padding: 10px 12px; }
+  .dc-card__title { font-size: 13px; }
+  .dc-board { width: 100%; }
+  .dc-result__stats { grid-template-columns: 1fr; }
+}

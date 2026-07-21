@@ -8,6 +8,8 @@ import { FinalJourneyModal } from './components/replay/FinalJourneyModal.tsx';
 import { ShareCard } from './components/replay/ShareCard.tsx';
 import { isFinalJourneyUnlocked, buildReplayHistory } from './components/replay/replayEngine';
 import './components/replay/replay.css';
+import { DailyChallengeCard, DailyChallengeLeaderboard, DailyChallengeHistory, DailyChallengeBadges } from './components/daily-challenge/DailyChallengeCard.tsx';
+import './components/daily-challenge/DailyChallengeCard.css';
 
 const APP_BASE = window.location.pathname.startsWith('/spurti') ? '/spurti' : '';
 const API = `${APP_BASE}/api`;
@@ -279,10 +281,18 @@ function StudentView({ profile, onBack }) {
       </header>
       <LevelStatus student={student} />
       <StudentPulse profile={profile} badges={badges} nextActions={nextActions} />
-      <Tabs tab={tab} setTab={setTab} tabs={[['bank','SP Bank'], ['polls','Polls'], ['leaderboard','Leaderboard'], ['replays','Replays']]} />
+      <DailyChallengeCard email={student.email} />
+      <Tabs tab={tab} setTab={setTab} tabs={[['bank','SP Bank'], ['polls','Polls'], ['leaderboard','Leaderboard'], ['replays','Replays'], ['challenge','Daily Challenge']]} />
       {tab === 'bank' && <SpBank transactions={profile.transactions} />}
       {tab === 'polls' && <Polls polls={profile.polls} />}
       {tab === 'leaderboard' && <LeaderboardTabs overall={profile.leaderboard} group={profile.groupLeaderboard} groupLabel={student.leaderboardGroupLabel} />}
+      {tab === 'challenge' && (
+        <section style={{ display: 'grid', gap: 12 }}>
+          <DailyChallengeBadges email={student.email} />
+          <DailyChallengeLeaderboard date={new Date().toISOString().slice(0, 10)} />
+          <DailyChallengeHistory />
+        </section>
+      )}
       {tab === 'replays' && (
         <section className="panel">
           <h3 style={{ margin: '12px 0 8px' }}>📼 Replay History</h3>

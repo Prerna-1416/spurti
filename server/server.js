@@ -13,6 +13,8 @@ import PollRecord from './models/PollRecord.js';
 import SPTransaction from './models/SPTransaction.js';
 import SessionEvent from './models/SessionEvent.js';
 import { leagueBand, levelFor, legendBadge, leaderboardGroup, groupLabel } from './services/levels.js';
+import challengeRouter from './routes/challenge.js';
+import { startChallengeScheduler } from './services/challengeScheduler.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
@@ -595,6 +597,8 @@ function last24Hours(now) {
 
 app.use('/api', api);
 app.use('/spurti/api', api);
+app.use('/api/challenge', challengeRouter);
+app.use('/spurti/api/challenge', challengeRouter);
 
 if (fs.existsSync(clientDist)) {
   app.use('/spurti', express.static(clientDist));
@@ -606,6 +610,7 @@ if (fs.existsSync(clientDist)) {
 }
 
 mongoose.connect(MONGO_URI).then(() => {
+  startChallengeScheduler();
   app.listen(PORT, () => console.log(`Spurti app running at http://localhost:${PORT}/`));
 }).catch((error) => {
   console.error(error);
